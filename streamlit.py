@@ -11,13 +11,12 @@ from sklearn.linear_model import LogisticRegression
 # Section 1: Dropdown Menus
 
 st.title('Internet Outage Liklihood and Severity Prediction')
-region = st.selectbox(
-    'Which region are you interested in?',
-    ('Middle East/Northern Africa', 'Southeast Asia'))
 
-
-with st.form("Country selection"):
-
+st.write('Select first Country')
+with st.form("First Country selection"):
+    region = st.selectbox(
+        'Which region are you interested in?',
+        ('Middle East/Northern Africa', 'Southeast Asia'))
     if (region == 'Middle East/Northern Africa'):
         country = st.selectbox(
             'Which country in the {} are you interested in?'.format(region),
@@ -26,15 +25,29 @@ with st.form("Country selection"):
         country = st.selectbox(
             'Which country in the {} are you interested in?'.format(region),
             ('Brunei', 'Burma', 'Myanmar', 'Cambodia', 'Timor-Leste', 'Indonesia', 'Laos', 'Malaysia', 'Philippines', 'Singapore', 'Thailand', 'Vietnam'))
-
+    submitted1 = st.form_submit_button("Click to select 2nd country.")
+st.write('Select Second Country')
+with st.form("Second Country selection"):
+    region = st.selectbox(
+        'Which region are you interested in?',
+        ('Middle East/Northern Africa', 'Southeast Asia'))
+    if (region == 'Middle East/Northern Africa'):
+        country2 = st.selectbox(
+            'Which country in the {} are you interested in?'.format(region),
+            ('Algeria', 'Bahrain', 'Egypt', 'Iran', 'Iraq', 'Israel', 'Jordan', 'Kuwait', 'Lebanon', 'Libya', 'Morocco', 'Oman', 'Qatar', 'Saudi Arabia', 'Syria', 'Tunisia', 'United Arab Emirates', 'Yemen'))
+    else:
+        country2 = st.selectbox(
+            'Which country in the {} are you interested in?'.format(region),
+            ('Brunei', 'Burma', 'Myanmar', 'Cambodia', 'Timor-Leste', 'Indonesia', 'Laos', 'Malaysia', 'Philippines', 'Singapore', 'Thailand', 'Vietnam'))
     submitted = st.form_submit_button("Click to scrape for articles.")
+
 
 # Section 2: Showing the news articles that will be used
 # API stuff (News API)
 
 n_articles = 10
 
-if submitted:
+def getArticle(country):
     # api key for newsapi
     api_key = ''
 
@@ -79,7 +92,8 @@ if submitted:
         session = HTMLSession()
         elements = session.get(url).html.find('p')
         bodies.append(' '.join([element.text for element in elements]))
-    st.write(bodies)
+    #st.write(bodies)
+    return bodies
 
 
 
@@ -89,7 +103,7 @@ if submitted:
 
 # Section 4: Model Computation
 loaded_vectorizer = pickle.load(open('data/vectorizer.sav', 'rb'))
-loaded_classifier = pickle.load(open('data/classifier' 'rb'))
+loaded_classifier = pickle.load(open('data/classifier.sav', 'rb'))
 loaded_regression = pickle.load(open('data/regression.sav', 'rb'))
 
 def classification(articles):
@@ -101,5 +115,22 @@ def regression(articles):
     return np.exp(loaded_regression.predict(matrix) - 1)
 # Section 5: Compare Two Countries
 
+def procCountry(bodies):
+    a = classification(bodies)
+    r = regression(bodies)
+    if a.sum() != 0:
+        # take avg for which classifier is True
+        mean1=(r*a).sum()/a.sum() 
+        # rounding to 2 decimals
+        mean1=np.round(mean1, 2)
+        return mean1
 
+
+if submitted:
+    bodies=getArticle(country)
+    m1=procCountry(bodies)
+    bodies=getArticle(country2)
+    m2=procCountry(bodies)
+    st.write(f'country: {country} Mean : {m1}')
+    st.write(f'country: {country2} Mean : {m2}')
 
